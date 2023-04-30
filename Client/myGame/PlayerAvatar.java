@@ -1,0 +1,175 @@
+package myGame;
+
+import tage.*;
+import tage.shapes.*;
+import tage.input.*; 
+import tage.input.action.*; 
+import tage.networking.IGameConnection;
+import tage.networking.IGameConnection.ProtocolType;
+import tage.input.action.AbstractInputAction;
+import net.java.games.input.Event;
+
+import java.lang.Math;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.*;
+import java.util.UUID;
+import java.net.InetAddress;
+import java.net.*;
+import javax.swing.*;
+import org.joml.*;
+
+import tage.physics.PhysicsEngine;
+import tage.physics.PhysicsObject;
+import tage.physics.PhysicsEngineFactory;
+import tage.physics.JBullet.*;
+import com.bulletphysics.dynamics.RigidBody;
+import com.bulletphysics.collision.dispatch.CollisionObject;
+
+public class PlayerAvatar extends GameObject {
+    protected PlayerState state;
+    public MyGame game;
+    public ProtocolClient protClient;
+    public float moveForce, jumpForce, jumpMoveForceRatio;
+    public int numOfJumps, maxJumps;
+    public AnimatedShape animatedShape;
+
+    public PlayerAvatar(GameObject root, ObjShape shape, TextureImage texture, MyGame g) {
+        super(root, shape, texture);
+        maxJumps = 1;
+        numOfJumps = maxJumps;
+        game = g;
+        protClient = game.protClient;
+        state = new PlayerIdleState(this);
+    }
+
+    public PlayerAvatar(GameObject root, AnimatedShape anShape, TextureImage texture, MyGame g){
+        super(root, anShape, texture);
+        maxJumps = 1;
+        numOfJumps = maxJumps;
+        game = g;
+        protClient = game.protClient;
+        state = new PlayerIdleState(this);
+        animatedShape = anShape;
+    }
+
+    public void setAthletics(float mf, float jf, float jmfr){
+        this.moveForce = mf;
+        this.jumpForce = jf;
+        this.jumpMoveForceRatio = jmfr;
+    }
+
+    public void assignControls(ProtocolClient client, InputManager inputManager){
+        MoveAvatarAction moveAvatar = new MoveAvatarAction(this);
+        AvatarJumpAction jumpAvatar = new AvatarJumpAction(this);
+
+        inputManager.associateActionWithAllKeyboards(
+            net.java.games.input.Component.Identifier.Key.W, moveAvatar,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+        inputManager.associateActionWithAllKeyboards(
+            net.java.games.input.Component.Identifier.Key.S, moveAvatar,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+        inputManager.associateActionWithAllKeyboards(
+            net.java.games.input.Component.Identifier.Key.SPACE, jumpAvatar,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+    }
+
+    public void update(){
+        super.update();
+        if (this.animatedShape != null){
+            this.animatedShape.updateAnimation();
+            updateState();
+        }
+        checkForAirborne();
+        if (this.getPhysicsObject() == null) { System.out.println("This PO is null");}
+    }
+
+    private float[] toFloatArray(double[] arr){
+		if (arr == null) return null;
+		int n = arr.length;
+		float[] ret = new float[n];
+		for (int i = 0; i < n; i++){
+			ret[i] = (float)arr[i];
+		}
+		return ret;
+	}
+
+    public void playerGrounded(){
+        this.state.ground();
+    }
+
+    public void playerAirborne(){
+        this.state.airborne();
+    }
+
+    protected void moveForward(float moveAcc){
+        this.state.toggleMove(moveAcc);
+    }
+
+    protected void jump(){
+        this.state.jump(jumpForce);
+    }
+
+    private void updateState(){
+        this.state.update();
+    }
+
+    private void checkForAirborne(){
+        float[] v = new float[3];
+        if (this.getPhysicsObject() != null){
+            v = this.getPhysicsObject().getLinearVelocity();
+        }
+        else{System.out.println("Player's physics object is null");}
+
+        if (Math.abs(v[1]) > game.Y_SPEED_FOR_AIRBORNE) {
+            playerAirborne();
+            System.out.println("player airborne");
+        }
+    }
+}
+
+class MoveAvatarAction extends AbstractInputAction{
+
+    private PlayerAvatar subject;
+    private float moveAmount;
+    private ProtocolClient ptclCl;
+
+    public MoveAvatarAction(PlayerAvatar sub) {
+
+        subject = sub;
+        moveAmount = subject.moveForce;
+        ptclCl = subject.protClient;
+
+    }
+
+    @Override
+    public void performAction(float time, Event e) {
+        
+        if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Key.W) {
+            subject.moveForward(moveAmount);
+        }
+        if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Key.S) {
+            subject.moveForward(-moveAmount);
+        }
+
+        if (ptclCl != null) {
+            ptclCl.sendMoveMessage(subject.getWorldLocation());
+        }
+        else {System.out.println("ProtocolClient is null");}
+    }
+}
+
+class AvatarJumpAction extends AbstractInputAction{
+
+    private PlayerAvatar subject;
+
+    public AvatarJumpAction(PlayerAvatar sub) {
+        subject = sub;
+    }
+
+    @Override
+    public void performAction(float time, Event e) {
+        subject.jump();
+    }
+}
