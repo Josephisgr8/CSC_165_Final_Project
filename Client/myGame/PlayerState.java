@@ -55,10 +55,12 @@ class PlayerSkatingState extends PlayerState{
         System.out.println(this.name);
         this.player.animatedShape.stopAnimation();
         this.player.animatedShape.playAnimation("SKATE", player.game.AVATAR_ANIMATION_RATE, AnimatedShape.EndType.LOOP, 0);
+        this.player.skatingSound.play();
     }
 
     @Override
     public void toggleMove(float moveAccel) {
+        this.player.skatingSound.stop();
         this.player.state = new PlayerIdleState(player);
     }
 
@@ -69,6 +71,7 @@ class PlayerSkatingState extends PlayerState{
             upward = upward.mul(jf);
             this.player.getPhysicsObject().applyForce(upward.x(), upward.y(), upward.z(), 0f,0f,0f);
             this.player.numOfJumps -= 1;
+            this.player.skatingSound.stop();
             this.player.state = new PlayerAirborneMovingState(player, moveAcceleration);
         }
     }
@@ -81,6 +84,7 @@ class PlayerSkatingState extends PlayerState{
 
     @Override
     public void airborne(){
+        this.player.skatingSound.stop();
         this.player.state = new PlayerAirborneMovingState(player, moveAcceleration);
     }
 

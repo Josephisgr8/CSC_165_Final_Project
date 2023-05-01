@@ -19,6 +19,7 @@ import java.net.InetAddress;
 import java.net.*;
 import javax.swing.*;
 import org.joml.*;
+import tage.audio.*;
 
 import tage.physics.PhysicsEngine;
 import tage.physics.PhysicsObject;
@@ -34,6 +35,8 @@ public class PlayerAvatar extends GameObject {
     public float moveForce, jumpForce, jumpMoveForceRatio;
     public int numOfJumps, maxJumps;
     public AnimatedShape animatedShape;
+
+	public Sound skatingSound;
 
     public PlayerAvatar(GameObject root, ObjShape shape, TextureImage texture, MyGame g) {
         super(root, shape, texture);
@@ -60,6 +63,24 @@ public class PlayerAvatar extends GameObject {
         this.jumpMoveForceRatio = jmfr;
     }
 
+    public void setupAudio(){
+        AudioResource skateResource;
+
+        skateResource = game.audioMgr.createAudioResource("assets/sounds/SKATE.wav", AudioResourceType.AUDIO_SAMPLE);
+		//Sound Effect from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=32721">Pixabay</a>
+
+        skatingSound = new Sound(skateResource, SoundType.SOUND_EFFECT, game.AVATAR_SKATE_VOLUME, true);
+
+		skatingSound.initialize(game.audioMgr);
+		skatingSound.setMaxDistance(game.AVATAR_SKATE_SOUND_MAX_DIST);
+		skatingSound.setMinDistance(game.AVATAR_SKATE_SOUND_MIN_DIST);
+		skatingSound.setRollOff(game.AVATAR_SKATE_SOUND_ROLL_OFF);
+
+		skatingSound.setLocation(this.getWorldLocation());
+
+    }
+
+
     public void assignControls(ProtocolClient client, InputManager inputManager){
         MoveAvatarAction moveAvatar = new MoveAvatarAction(this);
         AvatarJumpAction jumpAvatar = new AvatarJumpAction(this);
@@ -82,6 +103,7 @@ public class PlayerAvatar extends GameObject {
             updateState();
         }
         checkForAirborne();
+        updateSoundLocation();
         if (this.getPhysicsObject() == null) { System.out.println("This PO is null");}
     }
 
@@ -109,6 +131,13 @@ public class PlayerAvatar extends GameObject {
 
     protected void jump(){
         this.state.jump(jumpForce);
+    }
+
+    private void updateSoundLocation(){
+        if (this.skatingSound != null)
+        {
+            this.skatingSound.setLocation(this.getWorldLocation());
+        }
     }
 
     private void updateState(){

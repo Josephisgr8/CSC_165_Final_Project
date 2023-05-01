@@ -6,7 +6,7 @@ import tage.input.*;
 import tage.input.action.*; 
 import tage.networking.IGameConnection;
 import tage.networking.IGameConnection.ProtocolType;
-//import tage.rml.*;
+import tage.audio.*;
 
 import java.lang.Math;
 import java.awt.*;
@@ -42,6 +42,10 @@ public class MyGame extends VariableFrameRateGame
 	public static float ORBIT_CAM_SENSITIVITY;
 	public static float AVATAR_ROTATE_SPEED;
 	public static float AVATAR_ACCEL_FORCE;
+	public static int AVATAR_SKATE_VOLUME;
+	public static float AVATAR_SKATE_SOUND_MAX_DIST;
+	public static float AVATAR_SKATE_SOUND_MIN_DIST;
+	public static float AVATAR_SKATE_SOUND_ROLL_OFF;
 	public static float AVATAR_MASS;
 	public static float AVATAR_JUMP_MOVE_FORCE_RATIO;
 	public static float AVATAR_JUMP_FORCE;
@@ -58,9 +62,12 @@ public class MyGame extends VariableFrameRateGame
 
 	private static Engine engine;
 	private InputManager inputManager;
+
 	private static ScriptEngine jsEngine;
 	private PhysicsEngine physEng;
 	private float vals[] = new float[16];
+
+	public IAudioManager audioMgr;
 
 	private GhostManager gm;
 	private String serverAddress;
@@ -158,7 +165,12 @@ public class MyGame extends VariableFrameRateGame
 		elapsTime = 0.0;
 		(engine.getRenderSystem()).setWindowDimensions(1900,1000);
 
+		// ------------- positioning the camera -------------
+		mainCam = engine.getRenderSystem().getViewport("MAIN").getCamera();
+		camOrbit = new CameraOrbit3D(mainCam, playerCharacter, engine,ORBIT_CAM_SENSITIVITY);
+
 		setupNetwork();
+		setupAudio();
 		associateActions();
 
 		// --- initialize physics system ---
@@ -176,41 +188,18 @@ public class MyGame extends VariableFrameRateGame
 		Matrix4f translation = new Matrix4f(playerCharacter.getWorldTranslation());	
 		tempTransform = toDoubleArray(translation.get(vals));
 		playerCharacterPO = physEng.addBoxObject(physEng.nextUID(), AVATAR_MASS, tempTransform, size);
-		playerCharacterPO.setBounciness(0f);
+		playerCharacterPO.setBounciness(0.01f);
 		playerCharacter.setPhysicsObject(playerCharacterPO);
 
 		translation = new Matrix4f(terrainObject.getWorldTranslation());
 		tempTransform = toDoubleArray(translation.get(vals));
 		terrainPO = physEng.addStaticPlaneObject(
 		physEng.nextUID(), tempTransform, up, 0.0f);
-		terrainPO.setBounciness(0f);
+		terrainPO.setBounciness(0.01f);
 		terrainObject.setPhysicsObject(terrainPO);
-
-		// ------------- positioning the camera -------------
-		mainCam = engine.getRenderSystem().getViewport("MAIN").getCamera();
-		camOrbit = new CameraOrbit3D(mainCam, playerCharacter, engine,ORBIT_CAM_SENSITIVITY);
 
 		//--------Assign controls to player---------
 		playerCharacter.assignControls(protClient, inputManager);
-	}
-
-	private void setupNetwork() {
-		isClientConnected = false;
-
-		try{
-			protClient = new ProtocolClient(InetAddress.
-			getByName(serverAddress), serverPort, serverProtocol, this, AVATAR_INIT_SCALE);
-		} 
-		catch (UnknownHostException e) { e.printStackTrace();}
-		catch (IOException e) { e.printStackTrace(); }
-
-		if (protClient == null){
-			System.out.println("missing protocol host"); }
-		else{
-			// ask client protocol to send initial join message
-			// to server, with a unique identifier for this client
-			protClient.sendJoinMessage();
-		}
 	}
 
 	@Override
@@ -220,8 +209,6 @@ public class MyGame extends VariableFrameRateGame
 		elapsTime = currFrameTime - lastFrameTime;
 		lastFrameTime = currFrameTime;
 
-		//System.out.println(playerCharacter.getWorldLocation());
-		
 		inputManager.update(0.0f);
 
 		// build and set HUD
@@ -230,6 +217,9 @@ public class MyGame extends VariableFrameRateGame
 
 		//update camera
 		camOrbit.updateCameraPos();
+
+		//update sound
+		setEarParams();
 
 		//move light
 		playerSpotlight.setLocation(new Vector3f(playerCharacter.getWorldLocation().x, 
@@ -277,6 +267,44 @@ public class MyGame extends VariableFrameRateGame
 			}
 		}
 
+	}
+
+	public void setupAudio(){
+		audioMgr = AudioManagerFactory.createAudioManager("tage.audio.joal.JOALAudioManager");
+
+		if (!audioMgr.initialize()){
+			System.out.println("Audio Manager failed to initialize");
+			return;
+		}
+		setEarParams();
+		playerCharacter.setupAudio();
+		//playerSkatingSound.play();
+	}
+
+	private void setEarParams(){
+		Camera cam = mainCam;
+
+		audioMgr.getEar().setLocation(playerCharacter.getWorldLocation());
+		audioMgr.getEar().setOrientation(cam.getN(), new Vector3f(0f,1f,0f));
+	}
+
+	private void setupNetwork() {
+		isClientConnected = false;
+
+		try{
+			protClient = new ProtocolClient(InetAddress.
+			getByName(serverAddress), serverPort, serverProtocol, this, AVATAR_INIT_SCALE);
+		} 
+		catch (UnknownHostException e) { e.printStackTrace();}
+		catch (IOException e) { e.printStackTrace(); }
+
+		if (protClient == null){
+			System.out.println("missing protocol host"); }
+		else{
+			// ask client protocol to send initial join message
+			// to server, with a unique identifier for this client
+			protClient.sendJoinMessage();
+		}
 	}
 
 	private void createPlayerCharacter() {
@@ -435,6 +463,10 @@ public class MyGame extends VariableFrameRateGame
 		SPOTLIGHT_HEIGHT = ((Double)(jse.get("SPOTLIGHT_HEIGHT"))).floatValue();
 		AVATAR_ROTATE_SPEED = ((Double)(jse.get("AVATAR_ROTATE_SPEED"))).floatValue();
 		AVATAR_ACCEL_FORCE = ((Double)(jse.get("AVATAR_ACCEL_FORCE"))).floatValue();
+		AVATAR_SKATE_VOLUME = ((int)(jse.get("AVATAR_SKATE_VOLUME")));
+		AVATAR_SKATE_SOUND_MAX_DIST = ((Double)(jse.get("AVATAR_SKATE_SOUND_MAX_DIST"))).floatValue();
+		AVATAR_SKATE_SOUND_MIN_DIST = ((Double)(jse.get("AVATAR_SKATE_SOUND_MIN_DIST"))).floatValue();
+		AVATAR_SKATE_SOUND_ROLL_OFF = ((Double)(jse.get("AVATAR_SKATE_SOUND_ROLL_OFF"))).floatValue();
 		AVATAR_MASS = ((Double)(jse.get("AVATAR_MASS"))).floatValue();
 		AVATAR_JUMP_FORCE = ((Double)(jse.get("AVATAR_JUMP_FORCE"))).floatValue();
 		AVATAR_JUMP_MOVE_FORCE_RATIO = ((Double)(jse.get("AVATAR_JUMP_MOVE_FORCE_RATIO"))).floatValue();
