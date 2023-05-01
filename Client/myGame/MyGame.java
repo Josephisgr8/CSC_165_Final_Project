@@ -68,6 +68,7 @@ public class MyGame extends VariableFrameRateGame
 	private float vals[] = new float[16];
 
 	public IAudioManager audioMgr;
+	private Sound violinSound;
 
 	private GhostManager gm;
 	private String serverAddress;
@@ -80,7 +81,7 @@ public class MyGame extends VariableFrameRateGame
 
 	private int snowyLand;    //skyboxes
 
-	private GameObject terrainObject, ghostObj;
+	private GameObject terrainObject, ghostObj, violinPlayer;
 	private PlayerAvatar playerCharacter;
 	private PhysicsObject playerCharacterPO, terrainPO;
 	private ObjShape terrainShape, ghostShape, iceCreamShape, snowmanShape;
@@ -145,7 +146,8 @@ public class MyGame extends VariableFrameRateGame
 	{	
 		createPlayerCharacter();
 		buildTerrain();
-
+		violinPlayer = new GameObject(GameObject.root(), iceCreamShape, iceCreamTexture);
+		violinPlayer.setLocalLocation(new Vector3f(10f,0f,10f));
 	}
 
 	@Override
@@ -278,7 +280,15 @@ public class MyGame extends VariableFrameRateGame
 		}
 		setEarParams();
 		playerCharacter.setupAudio();
-		//playerSkatingSound.play();
+		AudioResource violinResource = audioMgr.createAudioResource("assets/sounds/violin.wav", AudioResourceType.AUDIO_SAMPLE);
+		//Sound Effect by <a href="https://pixabay.com/users/samuelfrancisjohnson-1207793/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=111391">SamuelFrancisJohnson</a> from <a href="https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=111391">Pixabay</a>
+		violinSound = new Sound(violinResource, SoundType.SOUND_EFFECT, 100, true);
+		violinSound.initialize(audioMgr);
+		violinSound.setMaxDistance(10f);
+		violinSound.setMinDistance(0.5f);
+		violinSound.setRollOff(1.25f);
+		violinSound.setLocation(violinPlayer.getWorldLocation());
+		violinSound.play();
 	}
 
 	private void setEarParams(){
