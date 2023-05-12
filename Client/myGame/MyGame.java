@@ -69,7 +69,7 @@ public class MyGame extends VariableFrameRateGame
 	private float vals[] = new float[16];
 
 	public IAudioManager audioMgr;
-	private Sound violinSound;
+	private Sound backgroundMusic;
 
 	private GhostManager gm;
 	private String serverAddress;
@@ -82,7 +82,7 @@ public class MyGame extends VariableFrameRateGame
 
 	private int snowyLand;    //skyboxes
 
-	private GameObject terrainObject, ghostObj, violinPlayer;
+	private GameObject terrainObject, ghostObj;
 	private PlayerAvatar playerCharacter;
 	private PhysicsObject playerCharacterPO, terrainPO;
 	private ArrayList<PhysicsObject> terrainWalls = new ArrayList<PhysicsObject>();
@@ -156,8 +156,8 @@ public class MyGame extends VariableFrameRateGame
 	{	
 		createPlayerCharacter();
 		buildTerrain();
-		violinPlayer = new GameObject(GameObject.root(), iceCreamShape, iceCreamTexture);
-		violinPlayer.setLocalLocation(new Vector3f(10f,0f,10f));
+		//violinPlayer = new GameObject(GameObject.root(), iceCreamShape, iceCreamTexture);
+		//violinPlayer.setLocalLocation(new Vector3f(10f,0f,10f));
 
 		worldBuilder.buildObjects();
 	}
@@ -168,10 +168,11 @@ public class MyGame extends VariableFrameRateGame
 		playerCharacter.createLight(engine, SPOTLIGHT_HEIGHT);
 
 		endLight = new Light();
-		endLight.setType(Light.LightType.valueOf("SPOTLIGHT"));
-		endLight.setLocation(new Vector3f(50f, 70f, 15f));
-		endLight.setDirection(new Vector3f(0f, -1f, 0f));
-		endLight.setAmbient(0.2f, 0.2f, 0.2f);
+		endLight.setType(Light.LightType.valueOf("POSITIONAL"));
+		endLight.setLocation(new Vector3f(50f, 53f, 15f));
+		//endLight.setDirection(new Vector3f(0f, -1f, 0f));
+		endLight.setAmbient(1f, 1f, 1f);
+		endLight.setDiffuse(2f, 2f, 2f);
 		endLight.setLinearAttenuation(0.5f);
 		(engine.getSceneGraph()).addLight(endLight);
 	}
@@ -294,15 +295,19 @@ public class MyGame extends VariableFrameRateGame
 		}
 		setEarParams();
 		playerCharacter.setupAudio();
-		AudioResource violinResource = audioMgr.createAudioResource("assets/sounds/violin.wav", AudioResourceType.AUDIO_SAMPLE);
+		AudioResource violinResource = audioMgr.createAudioResource("assets/sounds/violin.wav", AudioResourceType.AUDIO_STREAM);
 		//Sound Effect by <a href="https://pixabay.com/users/samuelfrancisjohnson-1207793/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=111391">SamuelFrancisJohnson</a> from <a href="https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=111391">Pixabay</a>
-		violinSound = new Sound(violinResource, SoundType.SOUND_EFFECT, 100, true);
-		violinSound.initialize(audioMgr);
+		backgroundMusic = new Sound(violinResource, SoundType.SOUND_MUSIC, 100, true);
+		backgroundMusic.initialize(audioMgr);
+		backgroundMusic.setMaxDistance(100f);
+		backgroundMusic.setRollOff(0f);
+		/*
 		violinSound.setMaxDistance(10f);
 		violinSound.setMinDistance(1f);
 		violinSound.setRollOff(5f);
 		violinSound.setLocation(violinPlayer.getWorldLocation());
-		violinSound.play();
+		*/
+		backgroundMusic.play();
 	}
 
 	private void setEarParams(){
