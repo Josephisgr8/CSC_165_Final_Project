@@ -40,6 +40,7 @@ public class PlayerAvatar extends GameObject {
 	public Sound skatingSound;
 
     private Light playerSpotlight;
+    private boolean isLightOn;
     private float spotlightHeight;
 
     public PlayerAvatar(GameObject root, ObjShape shape, TextureImage texture, MyGame g) {
@@ -48,6 +49,7 @@ public class PlayerAvatar extends GameObject {
         game = g;
         //protClient = game.protClient;
         state = new PlayerIdleState(this);
+        isLightOn = true;
     }
 
     public PlayerAvatar(GameObject root, AnimatedShape anShape, TextureImage texture, MyGame g){
@@ -57,6 +59,7 @@ public class PlayerAvatar extends GameObject {
         //protClient = game.protClient;
         state = new PlayerIdleState(this);
         animatedShape = anShape;
+        isLightOn = true;
     }
 
     public void giveClient(ProtocolClient p) {
@@ -101,6 +104,7 @@ public class PlayerAvatar extends GameObject {
     public void assignControls(ProtocolClient client, InputManager inputManager){
         MoveAvatarAction moveAvatar = new MoveAvatarAction(this);
         AvatarJumpAction jumpAvatar = new AvatarJumpAction(this);
+        AvatarToggleLightAction toggleLight = new AvatarToggleLightAction(this);
 
         inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.W, moveAvatar,
@@ -111,6 +115,10 @@ public class PlayerAvatar extends GameObject {
         inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.SPACE, jumpAvatar,
             InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+        inputManager.associateActionWithAllKeyboards(
+            net.java.games.input.Component.Identifier.Key.F, toggleLight,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+        
     }
 
     public void update(){
@@ -157,6 +165,17 @@ public class PlayerAvatar extends GameObject {
 
     protected void jump(){
         this.state.jump(jumpForce);
+    }
+
+    protected void toggleLight(){
+        System.out.println(playerSpotlight.getDiffuse());
+        if (isLightOn){
+            playerSpotlight.setDiffuse(0f,0f,0f);
+        }
+        else{
+            playerSpotlight.setDiffuse(1f,1f,1f);
+        }
+        isLightOn = !isLightOn;
     }
 
     protected void changeSkin(){
@@ -247,4 +266,18 @@ class AvatarChangeSkinAction extends AbstractInputAction{
     }
 
 
+}
+
+class AvatarToggleLightAction extends AbstractInputAction{
+
+    private PlayerAvatar player;
+    
+    public AvatarToggleLightAction(PlayerAvatar sub){
+        player = sub;
+    }
+
+    @Override
+    public void performAction(float time, Event e){
+        player.toggleLight();
+    }
 }
