@@ -132,7 +132,7 @@ public class CameraOrbit3D {
             }
 
             camElevation = camElevation % 360;
-            if (camElevation < 0) {camElevation = 0;}
+            if (camElevation < 5) {camElevation = 5;}
             if (camElevation > 80) {camElevation = 80;} 
             updateCameraPos();
             //System.out.println(camElevation);

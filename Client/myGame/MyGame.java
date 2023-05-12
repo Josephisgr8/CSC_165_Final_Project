@@ -15,6 +15,7 @@ import java.io.*;
 import java.util.*;
 import java.util.UUID;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.net.*;
 import javax.swing.*;
 import org.joml.*;
@@ -72,7 +73,7 @@ public class MyGame extends VariableFrameRateGame
 
 	private GhostManager gm;
 	private String serverAddress;
-	private int serverPort;
+	private int serverPort, playerProgress;
 	private IGameConnection.ProtocolType serverProtocol;
 	public ProtocolClient protClient;
 	private boolean isClientConnected = false;
@@ -84,11 +85,14 @@ public class MyGame extends VariableFrameRateGame
 	private GameObject terrainObject, ghostObj, violinPlayer;
 	private PlayerAvatar playerCharacter;
 	private PhysicsObject playerCharacterPO, terrainPO;
-	private ObjShape terrainShape, ghostShape, iceCreamShape, snowmanShape;
+	private ArrayList<PhysicsObject> terrainWalls = new ArrayList<PhysicsObject>();
+	private ObjShape terrainShape, ghostShape, iceCreamShape, snowmanShape, npcShape;
 	private AnimatedShape playerCharacterAnimatedShape, snowmanAnimatedShape, iceCreamAnimatedShape;
-	private TextureImage playerCharacterTexture, terrainTexture, ghostTexture, heightMap, iceCreamTexture, snowmanTexture;
+	private TextureImage playerCharacterTexture, terrainTexture, ghostTexture, heightMap, iceCreamTexture, snowmanTexture, npcTexture;
 
-	private Light playerSpotlight;
+	private WorldBuilderHelper worldBuilder = new WorldBuilderHelper();
+
+	private Light endLight;
 
 	private Camera mainCam;
 	private CameraOrbit3D camOrbit;
@@ -115,23 +119,29 @@ public class MyGame extends VariableFrameRateGame
 	public void loadShapes()
 	{	
 		ghostShape = new ImportedModel("dolphinHighPoly.obj");
+		npcShape = new ImportedModel("dolphinHighPoly.obj");
 		iceCreamShape = new ImportedModel("IceCream.obj");
 		snowmanShape = new ImportedModel("Snowman.obj");
 		snowmanAnimatedShape = new AnimatedShape("Snowman.rkm", "Snowman.rks");
 		snowmanAnimatedShape.loadAnimation("SKATE", "Snowman_Skating.rka");
 		snowmanAnimatedShape.loadAnimation("FALL", "Snowman_Falling.rka");
 		terrainShape = new TerrainPlane(1000);
+		worldBuilder.loadShapes();
+
 	}
 
 	@Override
 	public void loadTextures()
 	{	
 		ghostTexture = new TextureImage("Dolphin_HighPolyUV.png");
+		npcTexture = new TextureImage("Dolphin_HighPolyUV.png");
 		iceCreamTexture = new TextureImage("IceCream_UV.png");
 		snowmanTexture = new TextureImage("Snowman_UV.png");
 		terrainTexture = new TextureImage("lake.jpg");
 		//Photo by Julia Volk: https://www.pexels.com/photo/ice-on-a-frozen-lake-7099647/
 		heightMap = new TextureImage("MapGrayScale.jpg");
+
+		worldBuilder.loadTextures();
 	}
 
 	@Override
@@ -148,16 +158,22 @@ public class MyGame extends VariableFrameRateGame
 		buildTerrain();
 		violinPlayer = new GameObject(GameObject.root(), iceCreamShape, iceCreamTexture);
 		violinPlayer.setLocalLocation(new Vector3f(10f,0f,10f));
+
+		worldBuilder.buildObjects();
 	}
 
 	@Override
 	public void initializeLights()
-	{	Light.setGlobalAmbient(0.4f, 0.4f, 0.4f);
-		playerSpotlight = new Light();
-		playerSpotlight.setType(Light.LightType.valueOf("SPOTLIGHT"));
-		playerSpotlight.setLocation(new Vector3f(5.0f, 4.0f, 2.0f));
-		playerSpotlight.setDirection(new Vector3f(0f, -1f, 0f));
-		(engine.getSceneGraph()).addLight(playerSpotlight);
+	{	Light.setGlobalAmbient(0.1f, 0.1f, 0.1f);
+		playerCharacter.createLight(engine, SPOTLIGHT_HEIGHT);
+
+		endLight = new Light();
+		endLight.setType(Light.LightType.valueOf("SPOTLIGHT"));
+		endLight.setLocation(new Vector3f(50f, 70f, 15f));
+		endLight.setDirection(new Vector3f(0f, -1f, 0f));
+		endLight.setAmbient(0.2f, 0.2f, 0.2f);
+		endLight.setLinearAttenuation(0.5f);
+		(engine.getSceneGraph()).addLight(endLight);
 	}
 
 	@Override
@@ -171,6 +187,8 @@ public class MyGame extends VariableFrameRateGame
 		mainCam = engine.getRenderSystem().getViewport("MAIN").getCamera();
 		camOrbit = new CameraOrbit3D(mainCam, playerCharacter, engine,ORBIT_CAM_SENSITIVITY);
 
+		playerProgress = 0;
+
 		setupNetwork();
 		setupAudio();
 		associateActions();
@@ -183,7 +201,6 @@ public class MyGame extends VariableFrameRateGame
 		physEng.setGravity(gravity);
 
 		// --- create physics world ---
-		float up[ ] = {0,1,0};
 		double[ ] tempTransform;
 		float[] size = {1f,1f,1f};
 
@@ -193,12 +210,8 @@ public class MyGame extends VariableFrameRateGame
 		playerCharacterPO.setBounciness(0.01f);
 		playerCharacter.setPhysicsObject(playerCharacterPO);
 
-		translation = new Matrix4f(terrainObject.getWorldTranslation());
-		tempTransform = toDoubleArray(translation.get(vals));
-		terrainPO = physEng.addStaticPlaneObject(
-		physEng.nextUID(), tempTransform, up, 0.0f);
-		terrainPO.setBounciness(0.01f);
-		terrainObject.setPhysicsObject(terrainPO);
+		buildPhysicalTerrain();
+		worldBuilder.buildPhysics(physEng);
 
 		//--------Assign controls to player---------
 		playerCharacter.assignControls(protClient, inputManager);
@@ -214,20 +227,17 @@ public class MyGame extends VariableFrameRateGame
 		inputManager.update(0.0f);
 
 		// build and set HUD
-		updatePhysics(elapsTime);
+		updateHUD();
+
 		playerCharacter.update();
+		updatePhysics(elapsTime);
 
 		//update camera
 		camOrbit.updateCameraPos();
 
 		//update sound
 		setEarParams();
-
-		//move light
-		playerSpotlight.setLocation(new Vector3f(playerCharacter.getWorldLocation().x, 
-			playerCharacter.getWorldLocation().y + SPOTLIGHT_HEIGHT,
-			playerCharacter.getWorldLocation().z));
-
+		
 		processNetworking((float)elapsTime);
 	}
 
@@ -243,6 +253,10 @@ public class MyGame extends VariableFrameRateGame
 			case KeyEvent.VK_1:
 				break;
 			case KeyEvent.VK_2:
+				break;
+			case KeyEvent.VK_SPACE:
+				//System.out.println(playerCharacter.getWorldLocation());
+				worldBuilder.test();
 				break;
 		}
 
@@ -285,8 +299,8 @@ public class MyGame extends VariableFrameRateGame
 		violinSound = new Sound(violinResource, SoundType.SOUND_EFFECT, 100, true);
 		violinSound.initialize(audioMgr);
 		violinSound.setMaxDistance(10f);
-		violinSound.setMinDistance(0.5f);
-		violinSound.setRollOff(1.25f);
+		violinSound.setMinDistance(1f);
+		violinSound.setRollOff(5f);
 		violinSound.setLocation(violinPlayer.getWorldLocation());
 		violinSound.play();
 	}
@@ -313,6 +327,7 @@ public class MyGame extends VariableFrameRateGame
 		else{
 			// ask client protocol to send initial join message
 			// to server, with a unique identifier for this client
+			playerCharacter.giveClient(protClient);
 			protClient.sendJoinMessage();
 		}
 	}
@@ -324,7 +339,7 @@ public class MyGame extends VariableFrameRateGame
 		playerCharacterTexture = snowmanTexture;
 
 		playerCharacter = new PlayerAvatar(GameObject.root(), playerCharacterAnimatedShape, playerCharacterTexture, this);
-		initialTranslation = (new org.joml.Matrix4f()).translation(0f,2f,0f);
+		initialTranslation = (new org.joml.Matrix4f()).translation(0f,0f,0f);
 		initialScale = (new org.joml.Matrix4f()).scaling(AVATAR_INIT_SCALE);
 		playerCharacter.setLocalTranslation(initialTranslation);
 		playerCharacter.setLocalScale(initialScale);
@@ -377,7 +392,7 @@ public class MyGame extends VariableFrameRateGame
 		objLoc = new Vector3f(objMat.m30(), objMat.m31(), objMat.m32());
 		playerLoc = new Vector3f(playerMat.m30(), playerMat.m31(), playerMat.m32());
 		
-		if (playerLoc.y() > objLoc.y()) {
+		if ((playerLoc.y() > objLoc.y()) && !(terrainWalls.contains(obj))) {
 			playerCharacter.playerGrounded();
 		}
 
@@ -398,6 +413,23 @@ public class MyGame extends VariableFrameRateGame
 				go.setLocalTranslation(mat2);
 			}
 		}
+	}
+
+	private void updateHUD(){
+
+		if (playerCharacter.getWorldLocation().y() > (float)playerProgress){
+			if (playerProgress*2 != 100){
+				playerProgress = (int)playerCharacter.getWorldLocation().y();
+			}
+		}
+		String progressString = "Record progress = " + Integer.toString(playerProgress * 2) + "%";
+
+
+		int hudX = (int) engine.getRenderSystem().getViewport("MAIN").getActualWidth() / 3;
+        int hudY = 15;
+		
+		engine.getHUDmanager().setHUD1(progressString, new Vector3f(0f,0f,0f), hudX, hudY);
+		engine.getHUDmanager().setHUD1font(5);
 	}
 
 	// ------------------ UTILITY FUNCTIONS used by physics
@@ -429,6 +461,73 @@ public class MyGame extends VariableFrameRateGame
 		terrainObject.setLocalScale(new org.joml.Matrix4f().scaling(
 			MAP_SCALE_X, MAP_SCALE_Y,MAP_SCALE_Z));
 		terrainObject.setHeightMap(heightMap);
+	}
+
+	private void buildPhysicalTerrain(){
+		Matrix4f translation;
+		double[] tempTransform;
+		PhysicsObject tempPO;
+		float up[ ] = {0,1,0};
+		float tempScaleX = MAP_SCALE_X * 98 / 100;
+		float tempScaleZ = MAP_SCALE_Z * 98 / 100;
+
+		//create floor plain
+		translation = new Matrix4f(terrainObject.getWorldTranslation());
+		tempTransform = toDoubleArray(translation.get(vals));
+		terrainPO = physEng.addStaticPlaneObject(
+		physEng.nextUID(), tempTransform, up, 0.0f);
+		terrainPO.setBounciness(0.01f);
+		terrainObject.setPhysicsObject(terrainPO);
+
+		//create walls
+		translation = new Matrix4f().setTranslation(0f, 0f, tempScaleZ);
+		tempTransform = toDoubleArray(translation.get(vals));
+		tempPO = physEng.addStaticPlaneObject(
+		physEng.nextUID(), tempTransform, new float[]{0f,0f,-1f}, 0.0f);
+		tempPO.setBounciness(0.01f);
+		tempPO.setFriction(1f);
+		terrainWalls.add(tempPO);
+
+		translation = new Matrix4f().setTranslation(tempScaleX, 0f, 0f);
+		tempTransform = toDoubleArray(translation.get(vals));
+		tempPO = physEng.addBoxObject(
+		physEng.nextUID(), 0f, tempTransform, new float[]{0.5f, (MAP_SCALE_Y * 2) - 1f, MAP_SCALE_Z * 2});
+		tempPO.setBounciness(0.01f);
+		tempPO.setFriction(1f);
+		terrainWalls.add(tempPO);
+		/*
+		translation = new Matrix4f().setTranslation(tempScaleX, 0f, 0f);
+		tempTransform = toDoubleArray(translation.get(vals));
+		tempPO = physEng.addStaticPlaneObject(
+		physEng.nextUID(), tempTransform, new float[]{-1f,0f,0f}, 0.0f);
+		tempPO.setBounciness(0.01f);
+		tempPO.setFriction(1f);
+		terrainWalls.add(tempPO); */
+
+		translation = new Matrix4f().setTranslation(0f, 0f, -tempScaleZ);
+		tempTransform = toDoubleArray(translation.get(vals));
+		tempPO = physEng.addStaticPlaneObject(
+		physEng.nextUID(), tempTransform, new float[]{0f,0f,1f}, 0.0f);
+		tempPO.setBounciness(0.01f);
+		tempPO.setFriction(1f);
+		terrainWalls.add(tempPO);
+
+		translation = new Matrix4f().setTranslation(-tempScaleX, 0f, 0f);
+		tempTransform = toDoubleArray(translation.get(vals));
+		tempPO = physEng.addStaticPlaneObject(
+		physEng.nextUID(), tempTransform, new float[]{1f,0f,0f}, 0.0f);
+		tempPO.setBounciness(0.01f);
+		tempPO.setFriction(1f);
+		terrainWalls.add(tempPO);
+
+		//create physical raised terrain
+		translation = new Matrix4f().setTranslation(-MAP_SCALE_X * 3/4, 0f, 0f);
+		tempTransform = toDoubleArray(translation.get(vals));
+		tempPO = physEng.addBoxObject(
+		physEng.nextUID(), 0f, tempTransform, new float[]{MAP_SCALE_X/2, MAP_SCALE_Y/6, MAP_SCALE_Z*2});
+		tempPO.setBounciness(0.01f);
+		tempPO.setFriction(1f);
+
 	}
 
 	private void executeScript(ScriptEngine scrEng, String fileName) {
@@ -508,8 +607,10 @@ public class MyGame extends VariableFrameRateGame
 	//public GameObject getAvatar() { return avatar; }
 
 	public ObjShape getGhostShape() { return ghostShape; }
+	public ObjShape getNPCShape() {return npcShape;}
 
 	public TextureImage getGhostTexture() { return ghostTexture; }
+	public TextureImage getNPCTexture() {return npcTexture;}
 
 	public GhostManager getGhostManager() { return gm; }
 
@@ -518,4 +619,11 @@ public class MyGame extends VariableFrameRateGame
 	public Vector3f getPlayerPosition() { return playerCharacter.getWorldLocation(); }
 
 	public void setIsConnected(boolean v) {isClientConnected = v;}
+
+	public boolean isPlayerNear(Vector3f npcPOS, double criteria){
+		if (playerCharacter.getWorldLocation().distance(npcPOS) > (float)criteria){
+			return false;
+		}
+		return true;
+	}
 }

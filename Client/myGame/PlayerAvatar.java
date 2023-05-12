@@ -33,34 +33,51 @@ public class PlayerAvatar extends GameObject {
     public MyGame game;
     public ProtocolClient protClient;
     public float moveForce, jumpForce, jumpMoveForceRatio;
-    public int numOfJumps, maxJumps;
+    public int numOfJumps;
+    public int maxJumps = 30;
     public AnimatedShape animatedShape;
 
 	public Sound skatingSound;
 
+    private Light playerSpotlight;
+    private float spotlightHeight;
+
     public PlayerAvatar(GameObject root, ObjShape shape, TextureImage texture, MyGame g) {
         super(root, shape, texture);
-        maxJumps = 1;
         numOfJumps = maxJumps;
         game = g;
-        protClient = game.protClient;
+        //protClient = game.protClient;
         state = new PlayerIdleState(this);
     }
 
     public PlayerAvatar(GameObject root, AnimatedShape anShape, TextureImage texture, MyGame g){
         super(root, anShape, texture);
-        maxJumps = 1;
         numOfJumps = maxJumps;
         game = g;
-        protClient = game.protClient;
+        //protClient = game.protClient;
         state = new PlayerIdleState(this);
         animatedShape = anShape;
+    }
+
+    public void giveClient(ProtocolClient p) {
+        protClient = p;
     }
 
     public void setAthletics(float mf, float jf, float jmfr){
         this.moveForce = mf;
         this.jumpForce = jf;
         this.jumpMoveForceRatio = jmfr;
+    }
+
+    public void createLight(Engine engine, float h){
+        spotlightHeight = h;
+
+        playerSpotlight = new Light();
+		playerSpotlight.setType(Light.LightType.valueOf("SPOTLIGHT"));
+		playerSpotlight.setLocation(new Vector3f(5.0f, 4.0f, 2.0f));
+		playerSpotlight.setDirection(new Vector3f(0f, -1f, 0f));
+        playerSpotlight.setAmbient(0.5f,0.5f,0.5f);
+		(engine.getSceneGraph()).addLight(playerSpotlight);
     }
 
     public void setupAudio(){
@@ -98,13 +115,22 @@ public class PlayerAvatar extends GameObject {
 
     public void update(){
         super.update();
+        checkForAirborne();
         if (this.animatedShape != null){
             this.animatedShape.updateAnimation();
             updateState();
         }
-        checkForAirborne();
         updateSoundLocation();
         if (this.getPhysicsObject() == null) { System.out.println("This PO is null");}
+        updateLight();
+    }
+
+    private void updateLight(){
+        if (this.playerSpotlight != null){
+            playerSpotlight.setLocation(new Vector3f(this.getWorldLocation().x, 
+                this.getWorldLocation().y + spotlightHeight,
+                this.getWorldLocation().z));
+        }
     }
 
     private float[] toFloatArray(double[] arr){
@@ -133,6 +159,10 @@ public class PlayerAvatar extends GameObject {
         this.state.jump(jumpForce);
     }
 
+    protected void changeSkin(){
+        //code
+    }
+
     private void updateSoundLocation(){
         if (this.skatingSound != null)
         {
@@ -149,13 +179,13 @@ public class PlayerAvatar extends GameObject {
         if (this.getPhysicsObject() != null){
             v = this.getPhysicsObject().getLinearVelocity();
         }
-        else{System.out.println("Player's physics object is null");}
 
         if (Math.abs(v[1]) > game.Y_SPEED_FOR_AIRBORNE) {
             playerAirborne();
-            System.out.println("player airborne");
         }
     }
+
+    
 }
 
 class MoveAvatarAction extends AbstractInputAction{
@@ -185,7 +215,7 @@ class MoveAvatarAction extends AbstractInputAction{
         if (ptclCl != null) {
             ptclCl.sendMoveMessage(subject.getWorldLocation());
         }
-        else {System.out.println("ProtocolClient is null");}
+        if (ptclCl == null) {System.out.println("ProtocolClient is null");}
     }
 }
 
@@ -201,4 +231,20 @@ class AvatarJumpAction extends AbstractInputAction{
     public void performAction(float time, Event e) {
         subject.jump();
     }
+}
+
+class AvatarChangeSkinAction extends AbstractInputAction{
+
+    private PlayerAvatar subject;
+
+    public AvatarChangeSkinAction(PlayerAvatar sub){
+        subject = sub;
+    }
+
+    @Override
+    public void performAction(float time, Event e){
+        subject.changeSkin();
+    }
+
+
 }
