@@ -47,6 +47,10 @@ public class MyGame extends VariableFrameRateGame
 	public static float AVATAR_SKATE_SOUND_MAX_DIST;
 	public static float AVATAR_SKATE_SOUND_MIN_DIST;
 	public static float AVATAR_SKATE_SOUND_ROLL_OFF;
+	public static int AVATAR_JUMP_VOLUME;
+	public static float AVATAR_JUMP_SOUND_MAX_DIST;
+	public static float AVATAR_JUMP_SOUND_MIN_DIST;
+	public static float AVATAR_JUMP_SOUND_ROLL_OFF;
 	public static float AVATAR_MASS;
 	public static float AVATAR_JUMP_MOVE_FORCE_RATIO;
 	public static float AVATAR_JUMP_FORCE;
@@ -58,6 +62,9 @@ public class MyGame extends VariableFrameRateGame
 	public static float MAP_SCALE_Z;
 	public static float GRAVITY;
 	public static float Y_SPEED_FOR_AIRBORNE;
+	public static int TERRAIN_SIZE;
+	public static float GLOBAL_LIGHT_AMBIENT;
+	public static float BACKGROUND_MUSIC_MAX_DIST;
 
 	//END INITS
 
@@ -125,7 +132,7 @@ public class MyGame extends VariableFrameRateGame
 		snowmanAnimatedShape = new AnimatedShape("Snowman.rkm", "Snowman.rks");
 		snowmanAnimatedShape.loadAnimation("SKATE", "Snowman_Skating.rka");
 		snowmanAnimatedShape.loadAnimation("FALL", "Snowman_Falling.rka");
-		terrainShape = new TerrainPlane(1000);
+		terrainShape = new TerrainPlane(TERRAIN_SIZE);
 		worldBuilder.loadShapes();
 
 	}
@@ -164,16 +171,14 @@ public class MyGame extends VariableFrameRateGame
 
 	@Override
 	public void initializeLights()
-	{	Light.setGlobalAmbient(0.1f, 0.1f, 0.1f);
+	{	Light.setGlobalAmbient(GLOBAL_LIGHT_AMBIENT, GLOBAL_LIGHT_AMBIENT, GLOBAL_LIGHT_AMBIENT);
 		playerCharacter.createLight(engine, SPOTLIGHT_HEIGHT);
 
 		endLight = new Light();
 		endLight.setType(Light.LightType.valueOf("POSITIONAL"));
 		endLight.setLocation(new Vector3f(50f, 53f, 15f));
-		//endLight.setDirection(new Vector3f(0f, -1f, 0f));
-		endLight.setAmbient(1f, 1f, 1f);
-		endLight.setDiffuse(2f, 2f, 2f);
-		endLight.setLinearAttenuation(0.5f);
+		endLight.setDiffuse(10f, 10f, 10f);
+		endLight.setLinearAttenuation(0.3f);
 		(engine.getSceneGraph()).addLight(endLight);
 	}
 
@@ -299,14 +304,8 @@ public class MyGame extends VariableFrameRateGame
 		//Sound Effect by <a href="https://pixabay.com/users/samuelfrancisjohnson-1207793/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=111391">SamuelFrancisJohnson</a> from <a href="https://pixabay.com//?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=111391">Pixabay</a>
 		backgroundMusic = new Sound(violinResource, SoundType.SOUND_MUSIC, 100, true);
 		backgroundMusic.initialize(audioMgr);
-		backgroundMusic.setMaxDistance(100f);
+		backgroundMusic.setMaxDistance(BACKGROUND_MUSIC_MAX_DIST);
 		backgroundMusic.setRollOff(0f);
-		/*
-		violinSound.setMaxDistance(10f);
-		violinSound.setMinDistance(1f);
-		violinSound.setRollOff(5f);
-		violinSound.setLocation(violinPlayer.getWorldLocation());
-		*/
 		backgroundMusic.play();
 	}
 
@@ -500,14 +499,6 @@ public class MyGame extends VariableFrameRateGame
 		tempPO.setBounciness(0.01f);
 		tempPO.setFriction(1f);
 		terrainWalls.add(tempPO);
-		/*
-		translation = new Matrix4f().setTranslation(tempScaleX, 0f, 0f);
-		tempTransform = toDoubleArray(translation.get(vals));
-		tempPO = physEng.addStaticPlaneObject(
-		physEng.nextUID(), tempTransform, new float[]{-1f,0f,0f}, 0.0f);
-		tempPO.setBounciness(0.01f);
-		tempPO.setFriction(1f);
-		terrainWalls.add(tempPO); */
 
 		translation = new Matrix4f().setTranslation(0f, 0f, -tempScaleZ);
 		tempTransform = toDoubleArray(translation.get(vals));
@@ -581,6 +572,10 @@ public class MyGame extends VariableFrameRateGame
 		AVATAR_SKATE_SOUND_MAX_DIST = ((Double)(jse.get("AVATAR_SKATE_SOUND_MAX_DIST"))).floatValue();
 		AVATAR_SKATE_SOUND_MIN_DIST = ((Double)(jse.get("AVATAR_SKATE_SOUND_MIN_DIST"))).floatValue();
 		AVATAR_SKATE_SOUND_ROLL_OFF = ((Double)(jse.get("AVATAR_SKATE_SOUND_ROLL_OFF"))).floatValue();
+		AVATAR_JUMP_VOLUME = ((int)(jse.get("AVATAR_JUMP_VOLUME")));
+		AVATAR_JUMP_SOUND_MAX_DIST = ((Double)(jse.get("AVATAR_JUMP_SOUND_MAX_DIST"))).floatValue();
+		AVATAR_JUMP_SOUND_MIN_DIST = ((Double)(jse.get("AVATAR_JUMP_SOUND_MIN_DIST"))).floatValue();
+		AVATAR_JUMP_SOUND_ROLL_OFF = ((Double)(jse.get("AVATAR_JUMP_SOUND_ROLL_OFF"))).floatValue();
 		AVATAR_MASS = ((Double)(jse.get("AVATAR_MASS"))).floatValue();
 		AVATAR_JUMP_FORCE = ((Double)(jse.get("AVATAR_JUMP_FORCE"))).floatValue();
 		AVATAR_JUMP_MOVE_FORCE_RATIO = ((Double)(jse.get("AVATAR_JUMP_MOVE_FORCE_RATIO"))).floatValue();
@@ -591,6 +586,9 @@ public class MyGame extends VariableFrameRateGame
 		MAP_SCALE_Z = ((Double)(jse.get("MAP_SCALE_Z"))).floatValue();
 		GRAVITY = ((Double)(jse.get("GRAVITY"))).floatValue();
 		Y_SPEED_FOR_AIRBORNE = ((Double)(jse.get("Y_SPEED_FOR_AIRBORNE"))).floatValue();
+		TERRAIN_SIZE = ((int)(jse.get("TERRAIN_SIZE")));
+		GLOBAL_LIGHT_AMBIENT = ((Double)(jse.get("GLOBAL_LIGHT_AMBIENT"))).floatValue();
+		BACKGROUND_MUSIC_MAX_DIST = ((Double)(jse.get("BACKGROUND_MUSIC_MAX_DIST"))).floatValue();
 	}
 
 	private void associateActions() {

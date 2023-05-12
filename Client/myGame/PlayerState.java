@@ -66,13 +66,18 @@ class PlayerSkatingState extends PlayerState{
     @Override
     public void jump(float jf){
         if (this.player.numOfJumps > 0) {
+
             float[] linV = this.player.getPhysicsObject().getLinearVelocity();
             this.player.getPhysicsObject().setLinearVelocity(new float[]{linV[0], 0f, linV[2]});
             Vector3f upward = this.player.getWorldUpVector();
             upward = upward.mul(jf);
             this.player.getPhysicsObject().applyForce(upward.x(), upward.y(), upward.z(), 0f,0f,0f);
             this.player.numOfJumps -= 1;
+
             this.player.skatingSound.stop();
+            this.player.jumpSound.stop();
+            this.player.jumpSound.play();
+
             this.player.state = new PlayerAirborneMovingState(player, moveAcceleration);
         }
     }
@@ -122,6 +127,10 @@ class PlayerIdleState extends PlayerState{
             upward = upward.mul(jf);
             this.player.getPhysicsObject().applyForce(upward.x(), upward.y(), upward.z(), 0f,0f,0f);
             this.player.numOfJumps -= 1;
+
+            this.player.jumpSound.stop();
+            this.player.jumpSound.play();
+
             this.player.state = new PlayerAirborneStagnantState(player);
         }
 
@@ -167,6 +176,9 @@ class PlayerAirborneStagnantState extends PlayerState{
             upward = upward.mul(jf);
             this.player.getPhysicsObject().applyForce(upward.x(), upward.y(), upward.z(), 0f,0f,0f);
             this.player.numOfJumps -= 1;
+
+            this.player.jumpSound.stop();
+            this.player.jumpSound.play();
         }
     }
 
@@ -215,6 +227,9 @@ class PlayerAirborneMovingState extends PlayerState{
             upward = upward.mul(jf);
             this.player.getPhysicsObject().applyForce(upward.x(), upward.y(), upward.z(), 0f,0f,0f);
             this.player.numOfJumps -= 1;
+
+            this.player.jumpSound.stop();
+            this.player.jumpSound.play();
         }
         assert true;
     }

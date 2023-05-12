@@ -37,7 +37,7 @@ public class PlayerAvatar extends GameObject {
     public int maxJumps = 30;
     public AnimatedShape animatedShape;
 
-	public Sound skatingSound;
+	public Sound skatingSound, jumpSound;
 
     private Light playerSpotlight;
     private boolean isLightOn;
@@ -79,25 +79,32 @@ public class PlayerAvatar extends GameObject {
 		playerSpotlight.setType(Light.LightType.valueOf("SPOTLIGHT"));
 		playerSpotlight.setLocation(new Vector3f(5.0f, 4.0f, 2.0f));
 		playerSpotlight.setDirection(new Vector3f(0f, -1f, 0f));
-        playerSpotlight.setAmbient(0.5f,0.5f,0.5f);
+        playerSpotlight.setDiffuse(0.5f,0.5f,0.5f);
 		(engine.getSceneGraph()).addLight(playerSpotlight);
     }
 
     public void setupAudio(){
-        AudioResource skateResource;
+        AudioResource skateResource, jumpResource;
 
         skateResource = game.audioMgr.createAudioResource("assets/sounds/SKATE.wav", AudioResourceType.AUDIO_SAMPLE);
 		//Sound Effect from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=music&amp;utm_content=32721">Pixabay</a>
+        jumpResource = game.audioMgr.createAudioResource("assets/sounds/JUMP.wav", AudioResourceType.AUDIO_SAMPLE);
+        //Sound Effect from <a href="https://pixabay.com/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=6093">Pixabay</a>
 
         skatingSound = new Sound(skateResource, SoundType.SOUND_EFFECT, game.AVATAR_SKATE_VOLUME, true);
+        jumpSound = new Sound(jumpResource, SoundType.SOUND_EFFECT, game.AVATAR_JUMP_VOLUME, false);
 
 		skatingSound.initialize(game.audioMgr);
 		skatingSound.setMaxDistance(game.AVATAR_SKATE_SOUND_MAX_DIST);
 		skatingSound.setMinDistance(game.AVATAR_SKATE_SOUND_MIN_DIST);
 		skatingSound.setRollOff(game.AVATAR_SKATE_SOUND_ROLL_OFF);
-
 		skatingSound.setLocation(this.getWorldLocation());
 
+        jumpSound.initialize(game.audioMgr);
+		jumpSound.setMaxDistance(game.AVATAR_JUMP_SOUND_MAX_DIST);
+		jumpSound.setMinDistance(game.AVATAR_JUMP_SOUND_MIN_DIST);
+		jumpSound.setRollOff(game.AVATAR_JUMP_SOUND_ROLL_OFF);
+		jumpSound.setLocation(this.getWorldLocation());
     }
 
 
@@ -173,7 +180,7 @@ public class PlayerAvatar extends GameObject {
             playerSpotlight.setDiffuse(0f,0f,0f);
         }
         else{
-            playerSpotlight.setDiffuse(1f,1f,1f);
+            playerSpotlight.setDiffuse(0.5f,0.5f,0.5f);
         }
         isLightOn = !isLightOn;
     }
@@ -186,6 +193,7 @@ public class PlayerAvatar extends GameObject {
         if (this.skatingSound != null)
         {
             this.skatingSound.setLocation(this.getWorldLocation());
+            this.jumpSound.setLocation(this.getWorldLocation());
         }
     }
 
