@@ -55,7 +55,8 @@ public class MyGame extends VariableFrameRateGame
 	public static float AVATAR_JUMP_MOVE_FORCE_RATIO;
 	public static float AVATAR_JUMP_FORCE;
 	public static float SPOTLIGHT_HEIGHT;
-	public static float AVATAR_INIT_SCALE;
+	public static float SNOWMAN_INIT_SCALE;
+	public static float ICE_CREAM_INIT_SCALE;
 	public static float AVATAR_ANIMATION_RATE;
 	public static float MAP_SCALE_X;
 	public static float MAP_SCALE_Y;
@@ -321,7 +322,7 @@ public class MyGame extends VariableFrameRateGame
 
 		try{
 			protClient = new ProtocolClient(InetAddress.
-			getByName(serverAddress), serverPort, serverProtocol, this, AVATAR_INIT_SCALE);
+			getByName(serverAddress), serverPort, serverProtocol, this, SNOWMAN_INIT_SCALE);
 		} 
 		catch (UnknownHostException e) { e.printStackTrace();}
 		catch (IOException e) { e.printStackTrace(); }
@@ -344,10 +345,11 @@ public class MyGame extends VariableFrameRateGame
 
 		playerCharacter = new PlayerAvatar(GameObject.root(), playerCharacterAnimatedShape, playerCharacterTexture, this);
 		initialTranslation = (new org.joml.Matrix4f()).translation(0f,0f,0f);
-		initialScale = (new org.joml.Matrix4f()).scaling(AVATAR_INIT_SCALE);
+		initialScale = (new org.joml.Matrix4f()).scaling(SNOWMAN_INIT_SCALE);
 		playerCharacter.setLocalTranslation(initialTranslation);
 		playerCharacter.setLocalScale(initialScale);
 		playerCharacter.setAthletics(AVATAR_ACCEL_FORCE, AVATAR_JUMP_FORCE, AVATAR_JUMP_MOVE_FORCE_RATIO);
+		playerCharacter.giveICSkin(iceCreamShape, iceCreamTexture);
 		playerCharacter.getRenderStates().setModelOrientationCorrection(
 			(new Matrix4f()).rotationY((float)java.lang.Math.toRadians(180.0f)));
 	}
@@ -579,7 +581,8 @@ public class MyGame extends VariableFrameRateGame
 		AVATAR_MASS = ((Double)(jse.get("AVATAR_MASS"))).floatValue();
 		AVATAR_JUMP_FORCE = ((Double)(jse.get("AVATAR_JUMP_FORCE"))).floatValue();
 		AVATAR_JUMP_MOVE_FORCE_RATIO = ((Double)(jse.get("AVATAR_JUMP_MOVE_FORCE_RATIO"))).floatValue();
-		AVATAR_INIT_SCALE = ((Double)(jse.get("AVATAR_INIT_SCALE"))).floatValue();
+		SNOWMAN_INIT_SCALE = ((Double)(jse.get("SNOWMAN_INIT_SCALE"))).floatValue();
+		ICE_CREAM_INIT_SCALE = ((Double)(jse.get("ICE_CREAM_INIT_SCALE"))).floatValue();
 		AVATAR_ANIMATION_RATE= ((Double)(jse.get("AVATAR_ANIMATION_RATE"))).floatValue();
 		MAP_SCALE_X = ((Double)(jse.get("MAP_SCALE_X"))).floatValue();
 		MAP_SCALE_Y = ((Double)(jse.get("MAP_SCALE_Y"))).floatValue();

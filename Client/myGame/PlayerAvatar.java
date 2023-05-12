@@ -42,6 +42,9 @@ public class PlayerAvatar extends GameObject {
     private Light playerSpotlight;
     private boolean isLightOn;
     private float spotlightHeight;
+    private ObjShape snowman, iceCream;
+    private AnimatedShape snowmanA, iceCreamA;
+    private TextureImage snowmanT, iceCreamT;
 
     public PlayerAvatar(GameObject root, ObjShape shape, TextureImage texture, MyGame g) {
         super(root, shape, texture);
@@ -50,6 +53,8 @@ public class PlayerAvatar extends GameObject {
         //protClient = game.protClient;
         state = new PlayerIdleState(this);
         isLightOn = true;
+        snowman = shape;
+        snowmanT = texture;
     }
 
     public PlayerAvatar(GameObject root, AnimatedShape anShape, TextureImage texture, MyGame g){
@@ -60,10 +65,17 @@ public class PlayerAvatar extends GameObject {
         state = new PlayerIdleState(this);
         animatedShape = anShape;
         isLightOn = true;
+        snowmanA = anShape;
+        snowmanT = texture;
     }
 
     public void giveClient(ProtocolClient p) {
         protClient = p;
+    }
+
+    public void giveICSkin(ObjShape s, TextureImage t){
+        iceCream = s;
+        iceCreamT = t;
     }
 
     public void setAthletics(float mf, float jf, float jmfr){
@@ -112,6 +124,7 @@ public class PlayerAvatar extends GameObject {
         MoveAvatarAction moveAvatar = new MoveAvatarAction(this);
         AvatarJumpAction jumpAvatar = new AvatarJumpAction(this);
         AvatarToggleLightAction toggleLight = new AvatarToggleLightAction(this);
+        AvatarChangeSkinAction changeSkin = new AvatarChangeSkinAction(this);
 
         inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.W, moveAvatar,
@@ -125,6 +138,10 @@ public class PlayerAvatar extends GameObject {
         inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.F, toggleLight,
             InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+        inputManager.associateActionWithAllKeyboards(
+            net.java.games.input.Component.Identifier.Key.T, changeSkin,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+
         
     }
 
@@ -187,6 +204,20 @@ public class PlayerAvatar extends GameObject {
 
     protected void changeSkin(){
         //code
+        if (this.getTextureImage() == snowmanT){
+            this.setTextureImage(iceCreamT);
+            this.setShape(iceCream);
+            this.setLocalScale(new Matrix4f().scaling(game.ICE_CREAM_INIT_SCALE));
+            this.getRenderStates().setModelOrientationCorrection(
+			(new Matrix4f()).rotationY((float)java.lang.Math.toRadians(90.0f)));
+        }
+        else{
+            this.setTextureImage(snowmanT);
+            this.setShape(snowmanA);
+            this.setLocalScale(new Matrix4f().scaling(game.SNOWMAN_INIT_SCALE));
+            this.getRenderStates().setModelOrientationCorrection(
+			(new Matrix4f()).rotationY((float)java.lang.Math.toRadians(180.0f)));
+        }
     }
 
     private void updateSoundLocation(){
