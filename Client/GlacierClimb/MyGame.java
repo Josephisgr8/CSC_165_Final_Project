@@ -1,4 +1,4 @@
-package myGame;
+package GlacierClimb;
 
 import tage.*;
 import tage.shapes.*;
@@ -66,6 +66,7 @@ public class MyGame extends VariableFrameRateGame
 	public static int TERRAIN_SIZE;
 	public static float GLOBAL_LIGHT_AMBIENT;
 	public static float BACKGROUND_MUSIC_MAX_DIST;
+	public static float AXIS_DEADZONE;
 
 	//END INITS
 
@@ -252,11 +253,6 @@ public class MyGame extends VariableFrameRateGame
 	public void keyPressed(KeyEvent e)
 	{	switch (e.getKeyCode())
 		{
-			case KeyEvent.VK_ESCAPE:
-				protClient.sendByeMessage();
-				System.out.println("goodbye");
-				break;
-
 			case KeyEvent.VK_1:
 				break;
 			case KeyEvent.VK_2:
@@ -277,19 +273,6 @@ public class MyGame extends VariableFrameRateGame
 		if (protClient != null) {
 			protClient.processPackets();
 		}
-	}
-
-	private class SendCloseConnectionPacketAction extends AbstractInputAction {
-
-		//for leaving game. Need to attach input device
-
-		@Override
-		public void performAction(float time, net.java.games.input.Event e) {
-			if (protClient != null && isClientConnected) {
-				protClient.sendByeMessage();
-			}
-		}
-
 	}
 
 	public void setupAudio(){
@@ -592,6 +575,7 @@ public class MyGame extends VariableFrameRateGame
 		TERRAIN_SIZE = ((int)(jse.get("TERRAIN_SIZE")));
 		GLOBAL_LIGHT_AMBIENT = ((Double)(jse.get("GLOBAL_LIGHT_AMBIENT"))).floatValue();
 		BACKGROUND_MUSIC_MAX_DIST = ((Double)(jse.get("BACKGROUND_MUSIC_MAX_DIST"))).floatValue();
+		AXIS_DEADZONE = ((Double)(jse.get("AXIS_DEADZONE"))).floatValue();
 	}
 
 	private void associateActions() {
@@ -603,6 +587,9 @@ public class MyGame extends VariableFrameRateGame
             InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
         inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.A, rotateAvatar, 
+            InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		inputManager.associateActionWithAllGamepads(
+            net.java.games.input.Component.Identifier.Axis.X, rotateAvatar,
             InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 	}
 

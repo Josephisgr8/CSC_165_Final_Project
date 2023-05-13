@@ -1,4 +1,4 @@
-package myGame;
+package GlacierClimb;
 
 import tage.*;
 import tage.shapes.*;
@@ -30,6 +30,15 @@ public class RotateAvatarAction extends AbstractInputAction {
         }
         if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Key.A) {
             subject.yaw(rotateAmount);
+        }
+        if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Axis.X){
+            float keyValue = e.getValue();
+            if (keyValue > 0.3f) {
+                subject.yaw(-rotateAmount);
+            }
+            if (keyValue < -0.3f) {
+                subject.yaw(rotateAmount);
+            }
         }
     }
 

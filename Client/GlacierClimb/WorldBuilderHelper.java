@@ -1,4 +1,4 @@
-package myGame;
+package GlacierClimb;
 
 import tage.*;
 import tage.shapes.*;

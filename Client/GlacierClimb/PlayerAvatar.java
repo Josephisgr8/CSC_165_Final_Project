@@ -1,4 +1,4 @@
-package myGame;
+package GlacierClimb;
 
 import tage.*;
 import tage.shapes.*;
@@ -125,6 +125,7 @@ public class PlayerAvatar extends GameObject {
         AvatarJumpAction jumpAvatar = new AvatarJumpAction(this);
         AvatarToggleLightAction toggleLight = new AvatarToggleLightAction(this);
         AvatarChangeSkinAction changeSkin = new AvatarChangeSkinAction(this);
+        SendCloseConnectionPacketAction close = new SendCloseConnectionPacketAction(this);
 
         inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.W, moveAvatar,
@@ -132,14 +133,36 @@ public class PlayerAvatar extends GameObject {
         inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.S, moveAvatar,
             InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+        inputManager.associateActionWithAllGamepads(
+            net.java.games.input.Component.Identifier.Axis.Y, moveAvatar,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+
         inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.SPACE, jumpAvatar,
             InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+        inputManager.associateActionWithAllGamepads(
+            net.java.games.input.Component.Identifier.Button._1, jumpAvatar,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+
         inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.F, toggleLight,
             InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+        inputManager.associateActionWithAllGamepads(
+            net.java.games.input.Component.Identifier.Button._3, toggleLight,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+
         inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.T, changeSkin,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+        inputManager.associateActionWithAllGamepads(
+            net.java.games.input.Component.Identifier.Button._0, changeSkin,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+
+        inputManager.associateActionWithAllKeyboards(
+            net.java.games.input.Component.Identifier.Key.ESCAPE, close,
+            InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+        inputManager.associateActionWithAllGamepads(
+            net.java.games.input.Component.Identifier.Button._9, close,
             InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
         
@@ -184,6 +207,10 @@ public class PlayerAvatar extends GameObject {
     }
 
     protected void moveForward(float moveAcc){
+        if (protClient != null) {
+            protClient.sendMoveMessage(this.getWorldLocation());
+        }
+        if (protClient == null) {System.out.println("ProtocolClient is null");}
         this.state.toggleMove(moveAcc);
     }
 
@@ -220,6 +247,14 @@ public class PlayerAvatar extends GameObject {
         }
     }
 
+    protected void leave(){
+        System.out.println("Goodbye");
+        if (protClient != null) {
+            protClient.sendByeMessage();
+        }
+        game.shutdown();
+    }
+
     private void updateSoundLocation(){
         if (this.skatingSound != null)
         {
@@ -250,13 +285,13 @@ class MoveAvatarAction extends AbstractInputAction{
 
     private PlayerAvatar subject;
     private float moveAmount;
-    private ProtocolClient ptclCl;
+    private MyGame game;
 
     public MoveAvatarAction(PlayerAvatar sub) {
 
         subject = sub;
         moveAmount = subject.moveForce;
-        ptclCl = subject.protClient;
+        game = subject.game;
 
     }
 
@@ -269,11 +304,17 @@ class MoveAvatarAction extends AbstractInputAction{
         if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Key.S) {
             subject.moveForward(-moveAmount);
         }
+        if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Axis.Y){
+            float keyValue = e.getValue();
+            if (keyValue > game.AXIS_DEADZONE) {
+                subject.moveForward(-moveAmount);
+            }
+            if (keyValue < -game.AXIS_DEADZONE) {
+                subject.moveForward(moveAmount);
+            }
+        } 
 
-        if (ptclCl != null) {
-            ptclCl.sendMoveMessage(subject.getWorldLocation());
-        }
-        if (ptclCl == null) {System.out.println("ProtocolClient is null");}
+        
     }
 }
 
@@ -319,4 +360,19 @@ class AvatarToggleLightAction extends AbstractInputAction{
     public void performAction(float time, Event e){
         player.toggleLight();
     }
+}
+
+class SendCloseConnectionPacketAction extends AbstractInputAction {
+    private PlayerAvatar subject;
+
+		//for leaving game. Need to attach input device
+    public SendCloseConnectionPacketAction(PlayerAvatar sub){
+        subject = sub;
+    }
+
+    @Override
+    public void performAction(float time, Event e) {
+        subject.leave();
+    }
+
 }

@@ -1,2 +1,2 @@
-javac -Xlint:unchecked myGame/*.java
+javac -Xlint:unchecked GlacierClimb/*.java
 PAUSE

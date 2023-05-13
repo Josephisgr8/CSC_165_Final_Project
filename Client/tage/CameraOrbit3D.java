@@ -57,17 +57,31 @@ public class CameraOrbit3D {
         im.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.LEFT, azmAction,
             InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+        im.associateActionWithAllGamepads(
+            net.java.games.input.Component.Identifier.Axis.Z, azmAction,
+            InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+
         im.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.UP, eleAction,
             InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
         im.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.DOWN, eleAction,
             InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+        im.associateActionWithAllGamepads(
+            net.java.games.input.Component.Identifier.Axis.RZ, eleAction,
+            InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+
         im.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.E, radAction,
             InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
         im.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.Q, radAction,
+            InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+        im.associateActionWithAllGamepads(
+            net.java.games.input.Component.Identifier.Button._5, radAction,
+            InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+        im.associateActionWithAllGamepads(
+            net.java.games.input.Component.Identifier.Button._4, radAction,
             InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
     }
 
@@ -108,6 +122,14 @@ public class CameraOrbit3D {
             else if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Key.LEFT) {
                 camAzimuth -= rotAmount;
             }
+            else if(e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Axis.Z){
+                if (e.getValue() > 0.3f){
+                    camAzimuth += rotAmount;
+                }
+                else if (e.getValue() < -0.3f){
+                    camAzimuth -= rotAmount;
+                }
+            }
 
             camAzimuth = camAzimuth % 360;
             updateCameraPos();
@@ -129,6 +151,14 @@ public class CameraOrbit3D {
             }
             else if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Key.DOWN) {
                 camElevation -= rotAmount;
+            }
+            else if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Axis.RZ){
+                if (e.getValue() > 0.3f){
+                    camElevation -= rotAmount;
+                }
+                else if (e.getValue() < -0.3f){
+                    camElevation += rotAmount;
+                }
             }
 
             camElevation = camElevation % 360;
@@ -152,6 +182,12 @@ public class CameraOrbit3D {
                 camRadius += incrementAmount; 
             }
             else if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Key.Q) {
+                camRadius -= incrementAmount;
+            }
+            else if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Button._5){
+                camRadius += incrementAmount;
+            }
+            else if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Button._4){
                 camRadius -= incrementAmount;
             }
 

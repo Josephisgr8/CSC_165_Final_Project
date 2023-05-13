@@ -12,5 +12,5 @@ javac tage\physics\JBullet\*.java
 javac tage\ai\behaviortrees\*.java
 javac tage\audio\*.java
 javac tage\audio\joal\*.java
-javac -Xlint:unchecked myGame/*.java
+javac -Xlint:unchecked GlacierClimb/*.java
 PAUSE
