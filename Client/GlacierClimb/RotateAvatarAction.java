@@ -13,10 +13,10 @@ import net.java.games.input.Event;
 
 public class RotateAvatarAction extends AbstractInputAction {
 
-    private GameObject subject;
+    private PlayerAvatar subject;
     private float rotateAmount;
 
-    public RotateAvatarAction(GameObject sub, float amt) {
+    public RotateAvatarAction(PlayerAvatar sub, float amt) {
 
         subject = sub;
         rotateAmount = amt;
@@ -27,17 +27,21 @@ public class RotateAvatarAction extends AbstractInputAction {
 
         if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Key.D) {
             subject.yaw(-rotateAmount); 
+            subject.tellClientRotate(-rotateAmount);
         }
         if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Key.A) {
             subject.yaw(rotateAmount);
+            subject.tellClientRotate(rotateAmount);
         }
         if (e.getComponent().getIdentifier() == net.java.games.input.Component.Identifier.Axis.X){
             float keyValue = e.getValue();
             if (keyValue > 0.3f) {
                 subject.yaw(-rotateAmount);
+                subject.tellClientRotate(-rotateAmount);
             }
             if (keyValue < -0.3f) {
                 subject.yaw(rotateAmount);
+                subject.tellClientRotate(rotateAmount);
             }
         }
     }

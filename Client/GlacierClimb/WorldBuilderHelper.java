@@ -22,8 +22,6 @@ public class WorldBuilderHelper{
     private ArrayList<PhysicsObject> blockLongPO = new ArrayList<PhysicsObject>();
     private PhysicsObject endPlatformPO;
 
-    //private PhysicsEngine physEng;
-
     public WorldBuilderHelper(){
         assert true;
     }
@@ -81,10 +79,6 @@ public class WorldBuilderHelper{
         tempTransform = toDoubleArray(translation.get(vals));
         endPlatformPO = p.addBoxObject(p.nextUID(), 0f, tempTransform, endPlatformSize);
         endPlatformPO.setBounciness(0.01f);
-    }
-
-    public void test(){
-        //System.out.println(blockLongPO.getTransform());
     }
 
     //assists in building physics objects

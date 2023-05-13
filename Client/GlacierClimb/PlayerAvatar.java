@@ -34,7 +34,7 @@ public class PlayerAvatar extends GameObject {
     public ProtocolClient protClient;
     public float moveForce, jumpForce, jumpMoveForceRatio;
     public int numOfJumps;
-    public int maxJumps = 30;
+    public int maxJumps = 1;
     public AnimatedShape animatedShape;
 
 	public Sound skatingSound, jumpSound;
@@ -43,14 +43,13 @@ public class PlayerAvatar extends GameObject {
     private boolean isLightOn;
     private float spotlightHeight;
     private ObjShape snowman, iceCream;
-    private AnimatedShape snowmanA, iceCreamA;
+    private AnimatedShape snowmanA;
     private TextureImage snowmanT, iceCreamT;
 
     public PlayerAvatar(GameObject root, ObjShape shape, TextureImage texture, MyGame g) {
         super(root, shape, texture);
         numOfJumps = maxJumps;
         game = g;
-        //protClient = game.protClient;
         state = new PlayerIdleState(this);
         isLightOn = true;
         snowman = shape;
@@ -61,7 +60,6 @@ public class PlayerAvatar extends GameObject {
         super(root, anShape, texture);
         numOfJumps = maxJumps;
         game = g;
-        //protClient = game.protClient;
         state = new PlayerIdleState(this);
         animatedShape = anShape;
         isLightOn = true;
@@ -76,6 +74,12 @@ public class PlayerAvatar extends GameObject {
     public void giveICSkin(ObjShape s, TextureImage t){
         iceCream = s;
         iceCreamT = t;
+    }
+
+    public void tellClientRotate(float amt){
+        if (protClient != null){
+            protClient.sendRotateMessage(amt);
+        }
     }
 
     public void setAthletics(float mf, float jf, float jmfr){
@@ -165,7 +169,6 @@ public class PlayerAvatar extends GameObject {
             net.java.games.input.Component.Identifier.Button._9, close,
             InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
-        
     }
 
     public void update(){
@@ -176,8 +179,10 @@ public class PlayerAvatar extends GameObject {
             updateState();
         }
         updateSoundLocation();
-        if (this.getPhysicsObject() == null) { System.out.println("This PO is null");}
         updateLight();
+        if (protClient != null) {
+            protClient.sendMoveMessage(this.getWorldLocation());
+        }
     }
 
     private void updateLight(){
@@ -207,10 +212,6 @@ public class PlayerAvatar extends GameObject {
     }
 
     protected void moveForward(float moveAcc){
-        if (protClient != null) {
-            protClient.sendMoveMessage(this.getWorldLocation());
-        }
-        if (protClient == null) {System.out.println("ProtocolClient is null");}
         this.state.toggleMove(moveAcc);
     }
 
@@ -219,7 +220,6 @@ public class PlayerAvatar extends GameObject {
     }
 
     protected void toggleLight(){
-        System.out.println(playerSpotlight.getDiffuse());
         if (isLightOn){
             playerSpotlight.setDiffuse(0f,0f,0f);
         }
@@ -231,6 +231,9 @@ public class PlayerAvatar extends GameObject {
 
     protected void changeSkin(){
         //code
+        if (protClient != null){
+            protClient.sendChangeSkinMessage();
+        }
         if (this.getTextureImage() == snowmanT){
             this.setTextureImage(iceCreamT);
             this.setShape(iceCream);

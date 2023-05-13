@@ -5,26 +5,20 @@ import tage.networking.IGameConnection.ProtocolType;
 
 public class NetworkingServer{
 
-    private GameAIServerUDP UDPServer;
-    private NPCController npcController;
+    private GameServerUDP thisUDPServer;
 
-    public NetworkingServer(int serverPort){
-        npcController = new NPCController();
-
+    public NetworkingServer(int serverPort, String protocol){
         try {
-            UDPServer = new GameAIServerUDP(serverPort, npcController);
+            thisUDPServer = new GameServerUDP(serverPort);
         }
         catch (IOException e){
-            System.out.println("Server didn't start");
             e.printStackTrace();
         } 
-
-        npcController.start(UDPServer);
     }
 
     public static void main(String[] args){
-        if(args.length == 1){
-            NetworkingServer app = new NetworkingServer(Integer.parseInt(args[0]));
+        if(args.length > 1){
+            NetworkingServer app = new NetworkingServer(Integer.parseInt(args[0]), args[1]);
         } 
     } 
 }

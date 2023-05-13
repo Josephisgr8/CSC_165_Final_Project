@@ -100,50 +100,23 @@ public class ProtocolClient extends GameConnectionClient{
             catch (IOException e) { System.out.println("Error updating ghost avatar position.");}
         } 
 
-        // more additions to the network protocol to handle ghosts:
-        if (messageTokens[0].compareTo("createNPC") == 0){
-            // create a new ghost NPC
-            // Parse out the position
-            System.out.println("recieved createNPC message from server");
-            Vector3f ghostPosition = new Vector3f(
-            Float.parseFloat(messageTokens[1]),
-            Float.parseFloat(messageTokens[2]),
-            Float.parseFloat(messageTokens[3]));
-            try{
-                createGhostNPC(ghostPosition);
-            } 
-            catch (IOException e) { System.out.println("Error creating ghostNPC");} 
-            // error creating ghost avatar
-        } 
-
-        //MORE HERE for mnpc and isnear messages
-        if (messageTokens[0].compareTo("isnr") == 0){
-            //notfiy if avatar is near
-            float posX, posY, posZ;
-            posX = Float.parseFloat(messageTokens[1]);
-            posY = Float.parseFloat(messageTokens[2]);
-            posZ = Float.parseFloat(messageTokens[3]);
-            Vector3f npcPos = new Vector3f(posX, posY, posZ);
-            double criteria = Double.valueOf(messageTokens[4]);
-            String message = "isnear" + id.toString();
-            if (game.isPlayerNear(npcPos, criteria)){
-                try{
-                    sendPacket(message);
-                }
-                catch (IOException e) {e.printStackTrace();}
+        if (messageTokens[0].compareTo("rotate") == 0){
+            UUID remoteID = UUID.fromString(messageTokens[1]);
+            if (remoteID == id) {return;}//this is me
+            float rotateAmount = Float.parseFloat(messageTokens[2]);
+            try {
+                ghostManager.rotateGhostAvatar(remoteID, rotateAmount);
             }
+            catch (IOException e) {System.out.println("Error in rotating ghost");}
         }
 
-        if (messageTokens[0].compareTo("npcinfo") == 0){
-            float posX, posY, posZ;
-            posX = Float.parseFloat(messageTokens[1]);
-            posY = Float.parseFloat(messageTokens[2]);
-            posZ = Float.parseFloat(messageTokens[3]);
-            Vector3f npcPos = new Vector3f(posX, posY, posZ);
-            float size = Float.parseFloat(messageTokens[4]);
-            if (ghostnpc == null){return;}
-            ghostnpc.setPosition(npcPos);
-            ghostnpc.setSize(size);
+        if (messageTokens[0].compareTo("skin") == 0){
+            UUID remoteID = UUID.fromString(messageTokens[1]);
+            if (remoteID == id) {return;}//this is me
+            try {
+                ghostManager.changeSkin(remoteID);
+            }
+            catch (IOException e) {System.out.println("Error in changing ghost skin");}
         }
     }
 
@@ -196,35 +169,22 @@ public class ProtocolClient extends GameConnectionClient{
 
     }
 
-    //---------Ghost NPC Section----------
-
-    private void createGhostNPC(Vector3f position) throws IOException{
-        if (ghostnpc == null){
-            ghostnpc = new GhostNPC(0, game.getNPCShape(), game.getNPCTexture(), position);
-            System.out.println("Ghost npc made");
+    public void sendRotateMessage(float amt){
+        try{
+            String message = new String("rotate," + id.toString());
+            message += "," + amt;
+            sendPacket(message);
         }
+        catch (IOException e) {e.printStackTrace();}
     }
 
-    private void updateGhostNPC(Vector3f position, double gsize){ 
-        float gs;
-        if (ghostnpc == null){
-            try{
-                createGhostNPC(position);
-            }
-            catch (IOException e) { System.out.println("error creating npc"); }
+    public void sendChangeSkinMessage(){
+        try {
+            String message = new String("skin," + id.toString());
+            sendPacket(message);
         }
-
-        ghostnpc.setPosition(position);
-        if (gsize == 1.0f){
-            gs = 1.0f;
-        }
-        else {gs = 2.0f;}
-        ghostnpc.setSize(gs);
+        catch (IOException e) {e.printStackTrace();}
     }
-
-    //MAYBE MORE HERE
-
-
 
 }
 

@@ -84,20 +84,20 @@ public class MyGame extends VariableFrameRateGame
 	private String serverAddress;
 	private int serverPort, playerProgress;
 	private IGameConnection.ProtocolType serverProtocol;
-	public ProtocolClient protClient;
+	public static ProtocolClient protClient;
 	private boolean isClientConnected = false;
 	
 	private double lastFrameTime, currFrameTime, elapsTime;
 
 	private int snowyLand;    //skyboxes
 
-	private GameObject terrainObject, ghostObj;
+	private GameObject terrainObject, lightpoleObject;
 	private PlayerAvatar playerCharacter;
 	private PhysicsObject playerCharacterPO, terrainPO;
 	private ArrayList<PhysicsObject> terrainWalls = new ArrayList<PhysicsObject>();
-	private ObjShape terrainShape, ghostShape, iceCreamShape, snowmanShape, npcShape;
-	private AnimatedShape playerCharacterAnimatedShape, snowmanAnimatedShape, iceCreamAnimatedShape;
-	private TextureImage playerCharacterTexture, terrainTexture, ghostTexture, heightMap, iceCreamTexture, snowmanTexture, npcTexture;
+	private ObjShape terrainShape, ghostShape, iceCreamShape, snowmanShape, lightpoleShape;
+	private AnimatedShape playerCharacterAnimatedShape, snowmanAnimatedShape;
+	private TextureImage playerCharacterTexture, terrainTexture, ghostTexture, heightMap, iceCreamTexture, snowmanTexture, lightpoleTexture;
 
 	private WorldBuilderHelper worldBuilder = new WorldBuilderHelper();
 
@@ -127,8 +127,8 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadShapes()
 	{	
-		ghostShape = new ImportedModel("dolphinHighPoly.obj");
-		npcShape = new ImportedModel("dolphinHighPoly.obj");
+		ghostShape = new ImportedModel("Snowman.obj");
+		lightpoleShape = new ImportedModel("lightpole.obj");
 		iceCreamShape = new ImportedModel("IceCream.obj");
 		snowmanShape = new ImportedModel("Snowman.obj");
 		snowmanAnimatedShape = new AnimatedShape("Snowman.rkm", "Snowman.rks");
@@ -142,8 +142,8 @@ public class MyGame extends VariableFrameRateGame
 	@Override
 	public void loadTextures()
 	{	
-		ghostTexture = new TextureImage("Dolphin_HighPolyUV.png");
-		npcTexture = new TextureImage("Dolphin_HighPolyUV.png");
+		ghostTexture = new TextureImage("Snowman_UV.png");
+		lightpoleTexture = new TextureImage("lightpole.png");
 		iceCreamTexture = new TextureImage("IceCream_UV.png");
 		snowmanTexture = new TextureImage("Snowman_UV.png");
 		terrainTexture = new TextureImage("lake.jpg");
@@ -165,9 +165,9 @@ public class MyGame extends VariableFrameRateGame
 	{	
 		createPlayerCharacter();
 		buildTerrain();
-		//violinPlayer = new GameObject(GameObject.root(), iceCreamShape, iceCreamTexture);
-		//violinPlayer.setLocalLocation(new Vector3f(10f,0f,10f));
-
+		lightpoleObject = new GameObject(playerCharacter, lightpoleShape, lightpoleTexture);
+		lightpoleObject.setLocalScale(new Matrix4f().scaling(0.5f,1f,0.5f));
+		lightpoleObject.setLocalLocation(new Vector3f(0f,1f,0f));
 		worldBuilder.buildObjects();
 	}
 
@@ -258,8 +258,6 @@ public class MyGame extends VariableFrameRateGame
 			case KeyEvent.VK_2:
 				break;
 			case KeyEvent.VK_SPACE:
-				//System.out.println(playerCharacter.getWorldLocation());
-				worldBuilder.test();
 				break;
 		}
 
@@ -541,12 +539,6 @@ public class MyGame extends VariableFrameRateGame
 
 	}
 
-	private void matchAvWithTerr() {
-		Vector3f gbManLoc = playerCharacter.getWorldLocation();
-		float terrheight = terrainObject.getHeight(gbManLoc.x(), gbManLoc.z());
-		playerCharacter.setLocalLocation(new Vector3f(gbManLoc.x(), terrheight, gbManLoc.z()));
-	}
-
 	private static void assignInits(ScriptEngine jse) {
 
 		ORBIT_CAM_SENSITIVITY = ((Double)(jse.get("ORBIT_CAM_SENSITIVITY"))).floatValue();
@@ -580,7 +572,7 @@ public class MyGame extends VariableFrameRateGame
 
 	private void associateActions() {
 		inputManager = engine.getInputManager();
-		RotateAvatarAction rotateAvatar = new RotateAvatarAction((GameObject)playerCharacter, AVATAR_ROTATE_SPEED);
+		RotateAvatarAction rotateAvatar = new RotateAvatarAction(playerCharacter, AVATAR_ROTATE_SPEED);
 
 		inputManager.associateActionWithAllKeyboards(
             net.java.games.input.Component.Identifier.Key.D, rotateAvatar, 
@@ -599,11 +591,11 @@ public class MyGame extends VariableFrameRateGame
 
 	//public GameObject getAvatar() { return avatar; }
 
-	public ObjShape getGhostShape() { return ghostShape; }
-	public ObjShape getNPCShape() {return npcShape;}
+	public ObjShape getSnowmanShape() { return snowmanShape; }
+	public ObjShape getIceCreamShape() {return iceCreamShape;}
 
-	public TextureImage getGhostTexture() { return ghostTexture; }
-	public TextureImage getNPCTexture() {return npcTexture;}
+	public TextureImage getSnowmanTexture() { return snowmanTexture; }
+	public TextureImage getIceCreamTexture() {return iceCreamTexture;}
 
 	public GhostManager getGhostManager() { return gm; }
 
@@ -613,10 +605,4 @@ public class MyGame extends VariableFrameRateGame
 
 	public void setIsConnected(boolean v) {isClientConnected = v;}
 
-	public boolean isPlayerNear(Vector3f npcPOS, double criteria){
-		if (playerCharacter.getWorldLocation().distance(npcPOS) > (float)criteria){
-			return false;
-		}
-		return true;
-	}
 }

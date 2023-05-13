@@ -15,13 +15,14 @@ public class GhostManager{
     }
 
     public void createGhost(UUID id, Vector3f p, float initScale) throws IOException{
-        ObjShape s = game.getGhostShape();
-        TextureImage t = game.getGhostTexture();
+        ObjShape s = game.getSnowmanShape();
+        TextureImage t = game.getSnowmanTexture();
         GhostAvatar newAvatar = new GhostAvatar(id, s, t, p);
         Matrix4f initialScale = (new Matrix4f()).scaling(initScale);
         newAvatar.setLocalScale(initialScale);
         ghostAvs.add(newAvatar);
         System.out.println("success in creating ghost");
+        newAvatar.giveTandO(game.getIceCreamTexture(), game.getIceCreamShape());
     }
 
     public void removeGhostAvatar(UUID id){
@@ -52,6 +53,15 @@ public class GhostManager{
     public void updateGhostAvatar(UUID id, Vector3f position) throws IOException{
         GhostAvatar ghostAvatar = findAvatar(id);
         if (ghostAvatar != null) { ghostAvatar.setLocalLocation(position); }
-        else { System.out.println("unable to find ghost in list"); }
     } 
+
+    public void rotateGhostAvatar(UUID id, float rotateAmount) throws IOException{
+        GhostAvatar ghostAvatar = findAvatar(id);
+        if (ghostAvatar != null){ghostAvatar.yaw(rotateAmount);}
+    }
+
+    public void changeSkin(UUID id) throws IOException{
+        GhostAvatar ghostAvatar = findAvatar(id);
+        if (ghostAvatar != null){ghostAvatar.changeSkin(game.SNOWMAN_INIT_SCALE, game.ICE_CREAM_INIT_SCALE);}
+    }
 }

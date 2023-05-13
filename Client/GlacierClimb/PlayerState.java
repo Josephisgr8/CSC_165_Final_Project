@@ -51,7 +51,6 @@ class PlayerSkatingState extends PlayerState{
         super(playerAv);
         this.name = "Skating State";
         moveAcceleration = moveAccel;
-        System.out.println(this.name);
         this.player.animatedShape.stopAnimation();
         this.player.animatedShape.playAnimation("SKATE", player.game.AVATAR_ANIMATION_RATE, AnimatedShape.EndType.LOOP, 0);
         this.player.skatingSound.play();
@@ -107,7 +106,6 @@ class PlayerIdleState extends PlayerState{
     public PlayerIdleState(PlayerAvatar playerAv) {
         super(playerAv);
         this.name = "Idle State";
-        System.out.println(this.name);
         if (this.player.animatedShape != null){
             this.player.animatedShape.stopAnimation();
         }
@@ -157,7 +155,6 @@ class PlayerAirborneStagnantState extends PlayerState{
     public PlayerAirborneStagnantState(PlayerAvatar playerAv){
         super(playerAv);
         this.name = "Airborne stagnant state";
-        System.out.println(this.name);
         this.player.animatedShape.stopAnimation();
         this.player.animatedShape.playAnimation("FALL", player.game.AVATAR_ANIMATION_RATE, AnimatedShape.EndType.LOOP, 0);
     }
@@ -208,7 +205,6 @@ class PlayerAirborneMovingState extends PlayerState{
         super(playerAv);
         this.name = "Airborne Moving State";
         moveAcceleration = moveAcc * this.player.jumpMoveForceRatio;
-        System.out.println(this.name);
         this.player.animatedShape.stopAnimation();
         this.player.animatedShape.playAnimation("FALL", player.game.AVATAR_ANIMATION_RATE, AnimatedShape.EndType.LOOP, 0);
     }
